@@ -1,0 +1,2730 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<meta name="theme-color" content="#123b4a">
+
+<meta name="description"
+      content="Merge PDF, Word and JPG documents into one PDF">
+
+<title>Document Merger PWA</title>
+
+
+<!-- =====================================================
+     PWA MANIFEST
+===================================================== -->
+
+<link rel="manifest"
+      id="manifestLink">
+
+
+<!-- =====================================================
+     EXTERNAL LIBRARIES
+===================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+
+<style>
+
+/* =====================================================
+   GLOBAL
+===================================================== */
+
+:root{
+
+    --primary:#123b4a;
+    --primary-dark:#092d39;
+
+    --background:#f4f7f8;
+
+    --card:#ffffff;
+
+    --border:#d7e0e3;
+
+    --text:#1e2930;
+
+    --muted:#68777e;
+
+    --danger:#c0392b;
+
+    --success:#237a57;
+
+    --warning:#a36b00;
+
+    --shadow:
+        0 8px 25px rgba(18,59,74,.08);
+
+}
+
+*{
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    margin:0;
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    background:var(--background);
+
+    color:var(--text);
+
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+header{
+
+    background:var(--primary);
+
+    color:white;
+
+    min-height:76px;
+
+    padding:
+        12px
+        5%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    position:sticky;
+
+    top:0;
+
+    z-index:100;
+
+}
+
+.brand{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+.brand-icon{
+
+    width:46px;
+
+    height:46px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:
+        rgba(255,255,255,.12);
+
+    font-size:23px;
+
+}
+
+.brand h1{
+
+    margin:0;
+
+    font-size:21px;
+
+}
+
+.brand p{
+
+    margin:3px 0 0;
+
+    font-size:11px;
+
+    opacity:.75;
+
+}
+
+
+#installBtn{
+
+    display:none;
+
+    border:1px solid
+        rgba(255,255,255,.4);
+
+    background:
+        rgba(255,255,255,.1);
+
+    color:white;
+
+    border-radius:8px;
+
+    padding:9px 14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+}
+
+
+/* =====================================================
+   CONTAINER
+===================================================== */
+
+.container{
+
+    width:min(1100px,94%);
+
+    margin:25px auto 40px;
+
+}
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.card{
+
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:15px;
+
+    padding:21px;
+
+    margin-bottom:19px;
+
+    box-shadow:var(--shadow);
+
+}
+
+.card-heading{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    gap:15px;
+
+    margin-bottom:17px;
+
+}
+
+.card-heading h2{
+
+    margin:0;
+
+    color:var(--primary);
+
+    font-size:18px;
+
+}
+
+.card-heading p{
+
+    margin:4px 0 0;
+
+    color:var(--muted);
+
+    font-size:12px;
+
+}
+
+
+/* =====================================================
+   DROP ZONE
+===================================================== */
+
+.drop-zone{
+
+    min-height:190px;
+
+    border:2px dashed #9fb2b9;
+
+    border-radius:14px;
+
+    background:#f9fbfb;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.drop-zone:hover,
+.drop-zone.dragover{
+
+    border-color:var(--primary);
+
+    background:#eef5f7;
+
+}
+
+.upload-icon{
+
+    width:55px;
+
+    height:55px;
+
+    border-radius:50%;
+
+    background:#e9f0f2;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:25px;
+
+    margin-bottom:10px;
+
+}
+
+.drop-zone h3{
+
+    margin:0;
+
+    font-size:17px;
+
+}
+
+.drop-zone p{
+
+    margin:5px 0;
+
+    color:var(--muted);
+
+    font-size:13px;
+
+}
+
+.supported{
+
+    margin-top:8px;
+
+    font-size:11px;
+
+    color:var(--muted);
+
+}
+
+
+/* =====================================================
+   FILE LIST
+===================================================== */
+
+.empty{
+
+    text-align:center;
+
+    padding:35px 10px;
+
+    color:var(--muted);
+
+}
+
+.empty .empty-icon{
+
+    font-size:35px;
+
+    margin-bottom:8px;
+
+}
+
+.empty h3{
+
+    margin:0 0 5px;
+
+    color:var(--text);
+
+    font-size:16px;
+
+}
+
+.empty p{
+
+    margin:0;
+
+    font-size:12px;
+
+}
+
+
+.file-list{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:9px;
+
+}
+
+
+.file-item{
+
+    display:grid;
+
+    grid-template-columns:
+        48px 1fr auto;
+
+    align-items:center;
+
+    gap:12px;
+
+    padding:11px;
+
+    border:1px solid var(--border);
+
+    border-radius:11px;
+
+    background:#fbfcfc;
+
+}
+
+.file-icon{
+
+    width:44px;
+
+    height:44px;
+
+    border-radius:9px;
+
+    background:#e9f0f2;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:20px;
+
+}
+
+.file-name{
+
+    font-weight:700;
+
+    font-size:14px;
+
+    overflow:hidden;
+
+    white-space:nowrap;
+
+    text-overflow:ellipsis;
+
+}
+
+.file-meta{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    margin-top:4px;
+
+}
+
+.file-actions{
+
+    display:flex;
+
+    gap:5px;
+
+}
+
+.action-btn{
+
+    width:34px;
+
+    height:34px;
+
+    border:1px solid var(--border);
+
+    border-radius:7px;
+
+    background:white;
+
+    cursor:pointer;
+
+    font-size:14px;
+
+}
+
+.action-btn:hover{
+
+    background:#e9f0f2;
+
+}
+
+.action-btn:disabled{
+
+    opacity:.35;
+
+    cursor:not-allowed;
+
+}
+
+.delete-btn{
+
+    color:var(--danger);
+
+}
+
+
+/* =====================================================
+   INPUT
+===================================================== */
+
+.filename{
+
+    display:flex;
+
+    align-items:center;
+
+    max-width:600px;
+
+    border:1px solid var(--border);
+
+    border-radius:9px;
+
+    overflow:hidden;
+
+}
+
+.filename input{
+
+    flex:1;
+
+    border:0;
+
+    outline:0;
+
+    padding:12px;
+
+    font-size:14px;
+
+}
+
+.filename span{
+
+    background:#eef1f2;
+
+    color:var(--muted);
+
+    padding:12px;
+
+    font-size:13px;
+
+}
+
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+.action-area{
+
+    display:flex;
+
+    justify-content:center;
+
+    margin:25px 0;
+
+}
+
+.merge-btn{
+
+    width:min(500px,100%);
+
+    min-height:52px;
+
+    border:0;
+
+    border-radius:10px;
+
+    background:var(--primary);
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+}
+
+.merge-btn:hover:not(:disabled){
+
+    background:var(--primary-dark);
+
+}
+
+.merge-btn:disabled{
+
+    opacity:.4;
+
+    cursor:not-allowed;
+
+}
+
+
+/* =====================================================
+   PROGRESS
+===================================================== */
+
+.progress{
+
+    display:none;
+
+}
+
+.progress-head{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin-bottom:8px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+}
+
+.progress-track{
+
+    height:10px;
+
+    background:#e3e9eb;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+}
+
+.progress-bar{
+
+    width:0%;
+
+    height:100%;
+
+    background:var(--primary);
+
+    transition:width .2s;
+
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.status{
+
+    display:none;
+
+    padding:13px 15px;
+
+    border-radius:9px;
+
+    margin-bottom:20px;
+
+    font-size:13px;
+
+}
+
+.status.success{
+
+    display:block;
+
+    color:var(--success);
+
+    background:#f1faf5;
+
+    border:1px solid #a9d8c4;
+
+}
+
+.status.error{
+
+    display:block;
+
+    color:var(--danger);
+
+    background:#fff6f5;
+
+    border:1px solid #e8b7b2;
+
+}
+
+.status.info{
+
+    display:block;
+
+    color:var(--primary);
+
+    background:#eef5f7;
+
+    border:1px solid #c8d9de;
+
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+footer{
+
+    text-align:center;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    padding:20px;
+
+}
+
+
+/* =====================================================
+   DOCX RENDER AREA
+===================================================== */
+
+#docxRenderer{
+
+    position:fixed;
+
+    left:-100000px;
+
+    top:0;
+
+    width:794px;
+
+    min-height:1123px;
+
+    background:white;
+
+    color:black;
+
+    padding:45px;
+
+    font-family:Arial,sans-serif;
+
+    line-height:1.5;
+
+}
+
+#docxRenderer img{
+
+    max-width:100%;
+
+}
+
+#docxRenderer table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+#docxRenderer td,
+#docxRenderer th{
+
+    border:1px solid #777;
+
+    padding:5px;
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:700px){
+
+    header{
+
+        padding:
+            11px 4%;
+
+    }
+
+    .brand h1{
+
+        font-size:17px;
+
+    }
+
+    .brand-icon{
+
+        width:40px;
+
+        height:40px;
+
+        font-size:19px;
+
+    }
+
+    #installBtn{
+
+        font-size:10px;
+
+        padding:8px;
+
+    }
+
+    .container{
+
+        width:94%;
+
+        margin-top:17px;
+
+    }
+
+    .card{
+
+        padding:16px;
+
+        border-radius:13px;
+
+    }
+
+    .file-item{
+
+        grid-template-columns:
+            42px 1fr;
+
+    }
+
+    .file-icon{
+
+        width:40px;
+
+        height:40px;
+
+    }
+
+    .file-actions{
+
+        grid-column:2;
+
+    }
+
+    .action-area{
+
+        position:sticky;
+
+        bottom:10px;
+
+        z-index:50;
+
+    }
+
+    .merge-btn{
+
+        width:100%;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header>
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            📄
+        </div>
+
+        <div>
+
+            <h1>
+                Document Merger
+            </h1>
+
+            <p>
+                PDF • Word • JPG
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button id="installBtn">
+        Install App
+    </button>
+
+</header>
+
+
+
+<main class="container">
+
+
+<!-- =====================================================
+     UPLOAD
+===================================================== -->
+
+<section class="card">
+
+    <div class="card-heading">
+
+        <div>
+
+            <h2>
+                Add Documents
+            </h2>
+
+            <p>
+                Select multiple PDF, Word or JPG files.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <label
+        class="drop-zone"
+        id="dropZone"
+        for="fileInput">
+
+        <div class="upload-icon">
+            ⬆
+        </div>
+
+        <h3>
+            Drop files here
+        </h3>
+
+        <p>
+            or click to browse
+        </p>
+
+        <div class="supported">
+            PDF • DOCX • JPG • JPEG
+        </div>
+
+    </label>
+
+
+    <input
+        id="fileInput"
+        type="file"
+        multiple
+        accept=".pdf,.docx,.jpg,.jpeg"
+        hidden>
+
+</section>
+
+
+
+<!-- =====================================================
+     DOCUMENTS
+===================================================== -->
+
+<section class="card">
+
+    <div class="card-heading">
+
+        <div>
+
+            <h2>
+                Documents
+            </h2>
+
+            <p id="fileCount">
+                0 files selected
+            </p>
+
+        </div>
+
+
+        <button
+            id="clearBtn"
+            class="action-btn"
+            style="width:auto;padding:0 12px;"
+            disabled>
+
+            Clear All
+
+        </button>
+
+    </div>
+
+
+    <div
+        id="emptyState"
+        class="empty">
+
+        <div class="empty-icon">
+            📁
+        </div>
+
+        <h3>
+            No documents added
+        </h3>
+
+        <p>
+            Add documents above to begin.
+        </p>
+
+    </div>
+
+
+    <div
+        id="fileList"
+        class="file-list">
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     OUTPUT
+===================================================== -->
+
+<section class="card">
+
+    <div class="card-heading">
+
+        <div>
+
+            <h2>
+                Output PDF
+            </h2>
+
+            <p>
+                Enter the name of the merged PDF.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="filename">
+
+        <input
+            id="outputName"
+            type="text"
+            value="Merged-Document"
+            maxlength="100">
+
+        <span>
+            .pdf
+        </span>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     PROGRESS
+===================================================== -->
+
+<section
+    id="progressCard"
+    class="card progress">
+
+    <div class="progress-head">
+
+        <span id="progressText">
+            Preparing...
+        </span>
+
+        <span id="progressPercent">
+            0%
+        </span>
+
+    </div>
+
+
+    <div class="progress-track">
+
+        <div
+            id="progressBar"
+            class="progress-bar">
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     MERGE BUTTON
+===================================================== -->
+
+<div class="action-area">
+
+    <button
+        id="mergeBtn"
+        class="merge-btn"
+        disabled>
+
+        🔗 Merge Documents
+
+    </button>
+
+</div>
+
+
+
+<!-- =====================================================
+     STATUS
+===================================================== -->
+
+<div
+    id="status"
+    class="status">
+</div>
+
+
+</main>
+
+
+
+<footer>
+
+    <div>
+        Documents are processed locally in your browser.
+    </div>
+
+    <div>
+        Document Merger PWA
+    </div>
+
+</footer>
+
+
+
+<!-- DOCX RENDERER -->
+
+<div id="docxRenderer"></div>
+
+
+
+<script>
+
+/* =====================================================
+   PDF LIB
+===================================================== */
+
+const {
+    PDFDocument
+} = PDFLib;
+
+
+/* =====================================================
+   ELEMENTS
+===================================================== */
+
+const fileInput =
+    document.getElementById("fileInput");
+
+const dropZone =
+    document.getElementById("dropZone");
+
+const fileList =
+    document.getElementById("fileList");
+
+const emptyState =
+    document.getElementById("emptyState");
+
+const fileCount =
+    document.getElementById("fileCount");
+
+const clearBtn =
+    document.getElementById("clearBtn");
+
+const mergeBtn =
+    document.getElementById("mergeBtn");
+
+const outputName =
+    document.getElementById("outputName");
+
+const progressCard =
+    document.getElementById("progressCard");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+const progressText =
+    document.getElementById("progressText");
+
+const progressPercent =
+    document.getElementById("progressPercent");
+
+const statusBox =
+    document.getElementById("status");
+
+const docxRenderer =
+    document.getElementById("docxRenderer");
+
+const installBtn =
+    document.getElementById("installBtn");
+
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let documents = [];
+
+let deferredPrompt = null;
+
+
+/* =====================================================
+   FILE INPUT
+===================================================== */
+
+fileInput.addEventListener(
+    "change",
+    function(){
+
+        addDocuments(
+            Array.from(this.files)
+        );
+
+        this.value = "";
+
+    }
+);
+
+
+/* =====================================================
+   DRAG DROP
+===================================================== */
+
+[
+    "dragenter",
+    "dragover"
+].forEach(
+    eventName => {
+
+        dropZone.addEventListener(
+            eventName,
+            function(event){
+
+                event.preventDefault();
+
+                dropZone.classList.add(
+                    "dragover"
+                );
+
+            }
+        );
+
+    }
+);
+
+
+[
+    "dragleave",
+    "drop"
+].forEach(
+    eventName => {
+
+        dropZone.addEventListener(
+            eventName,
+            function(event){
+
+                event.preventDefault();
+
+                dropZone.classList.remove(
+                    "dragover"
+                );
+
+            }
+        );
+
+    }
+);
+
+
+dropZone.addEventListener(
+    "drop",
+    function(event){
+
+        addDocuments(
+            Array.from(
+                event.dataTransfer.files
+            )
+        );
+
+    }
+);
+
+
+/* =====================================================
+   ADD DOCUMENTS
+===================================================== */
+
+function addDocuments(newFiles){
+
+    let added = 0;
+
+    newFiles.forEach(file => {
+
+        if(!isSupported(file)){
+
+            showStatus(
+                `"${file.name}" is not supported.`,
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const duplicate =
+            documents.some(
+                item =>
+                    item.file.name === file.name &&
+                    item.file.size === file.size &&
+                    item.file.lastModified ===
+                        file.lastModified
+            );
+
+
+        if(duplicate){
+
+            return;
+
+        }
+
+
+        documents.push({
+
+            id:
+                Date.now() +
+                Math.random(),
+
+            file:file,
+
+            type:getType(file)
+
+        });
+
+
+        added++;
+
+    });
+
+
+    render();
+
+
+    if(added){
+
+        showStatus(
+            `${added} document${added>1?"s":""} added.`,
+            "success"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   SUPPORTED FILE
+===================================================== */
+
+function isSupported(file){
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    return [
+        "pdf",
+        "docx",
+        "jpg",
+        "jpeg"
+    ].includes(extension);
+
+}
+
+
+/* =====================================================
+   TYPE
+===================================================== */
+
+function getType(file){
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    if(extension === "pdf")
+        return "pdf";
+
+    if(extension === "docx")
+        return "docx";
+
+    if(
+        extension === "jpg" ||
+        extension === "jpeg"
+    )
+        return "jpg";
+
+    return "unknown";
+
+}
+
+
+/* =====================================================
+   ICON
+===================================================== */
+
+function iconFor(type){
+
+    if(type === "pdf")
+        return "📕";
+
+    if(type === "docx")
+        return "📘";
+
+    if(type === "jpg")
+        return "🖼️";
+
+    return "📄";
+
+}
+
+
+/* =====================================================
+   RENDER
+===================================================== */
+
+function render(){
+
+    fileList.innerHTML = "";
+
+
+    emptyState.style.display =
+        documents.length
+            ? "none"
+            : "block";
+
+
+    fileCount.textContent =
+        `${documents.length} file${documents.length===1?"":"s"} selected`;
+
+
+    clearBtn.disabled =
+        documents.length === 0;
+
+
+    mergeBtn.disabled =
+        documents.length === 0;
+
+
+    documents.forEach(
+        (item,index) => {
+
+            const row =
+                document.createElement("div");
+
+            row.className =
+                "file-item";
+
+
+            const icon =
+                document.createElement("div");
+
+            icon.className =
+                "file-icon";
+
+            icon.textContent =
+                iconFor(item.type);
+
+
+            const information =
+                document.createElement("div");
+
+
+            const name =
+                document.createElement("div");
+
+            name.className =
+                "file-name";
+
+            name.textContent =
+                `${index+1}. ${item.file.name}`;
+
+            name.title =
+                item.file.name;
+
+
+            const meta =
+                document.createElement("div");
+
+            meta.className =
+                "file-meta";
+
+            meta.textContent =
+                `${item.type.toUpperCase()} • ${formatBytes(item.file.size)}`;
+
+
+            information.appendChild(name);
+
+            information.appendChild(meta);
+
+
+            const actions =
+                document.createElement("div");
+
+            actions.className =
+                "file-actions";
+
+
+            const up =
+                makeButton(
+                    "↑",
+                    "Move Up"
+                );
+
+            up.disabled =
+                index === 0;
+
+            up.onclick =
+                () => move(index,-1);
+
+
+            const down =
+                makeButton(
+                    "↓",
+                    "Move Down"
+                );
+
+            down.disabled =
+                index === documents.length-1;
+
+            down.onclick =
+                () => move(index,1);
+
+
+            const remove =
+                makeButton(
+                    "✕",
+                    "Remove"
+                );
+
+            remove.classList.add(
+                "delete-btn"
+            );
+
+            remove.onclick =
+                () => removeDocument(index);
+
+
+            actions.appendChild(up);
+
+            actions.appendChild(down);
+
+            actions.appendChild(remove);
+
+
+            row.appendChild(icon);
+
+            row.appendChild(information);
+
+            row.appendChild(actions);
+
+
+            fileList.appendChild(row);
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+function makeButton(
+    text,
+    title
+){
+
+    const button =
+        document.createElement("button");
+
+    button.type =
+        "button";
+
+    button.className =
+        "action-btn";
+
+    button.textContent =
+        text;
+
+    button.title =
+        title;
+
+    return button;
+
+}
+
+
+/* =====================================================
+   MOVE
+===================================================== */
+
+function move(
+    index,
+    direction
+){
+
+    const newIndex =
+        index + direction;
+
+
+    if(
+        newIndex < 0 ||
+        newIndex >= documents.length
+    ){
+
+        return;
+
+    }
+
+
+    [
+        documents[index],
+        documents[newIndex]
+    ] =
+    [
+        documents[newIndex],
+        documents[index]
+    ];
+
+
+    render();
+
+}
+
+
+/* =====================================================
+   REMOVE
+===================================================== */
+
+function removeDocument(index){
+
+    documents.splice(
+        index,
+        1
+    );
+
+    render();
+
+}
+
+
+/* =====================================================
+   CLEAR
+===================================================== */
+
+clearBtn.onclick =
+function(){
+
+    documents = [];
+
+    render();
+
+    hideStatus();
+
+};
+
+
+/* =====================================================
+   MERGE
+===================================================== */
+
+mergeBtn.onclick =
+mergeDocuments;
+
+
+async function mergeDocuments(){
+
+    if(!documents.length){
+
+        showStatus(
+            "Please add documents first.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    mergeBtn.disabled =
+        true;
+
+    clearBtn.disabled =
+        true;
+
+    progressCard.style.display =
+        "block";
+
+
+    try{
+
+        const finalPdf =
+            await PDFDocument.create();
+
+
+        for(
+            let i=0;
+            i<documents.length;
+            i++
+        ){
+
+            const item =
+                documents[i];
+
+
+            updateProgress(
+                Math.round(
+                    (i /
+                    documents.length) *
+                    90
+                ),
+                `Processing ${i+1} of ${documents.length}: ${item.file.name}`
+            );
+
+
+            if(item.type === "pdf"){
+
+                await addPdf(
+                    finalPdf,
+                    item.file
+                );
+
+            }
+
+
+            else if(item.type === "jpg"){
+
+                await addJpg(
+                    finalPdf,
+                    item.file
+                );
+
+            }
+
+
+            else if(item.type === "docx"){
+
+                await addDocx(
+                    finalPdf,
+                    item.file
+                );
+
+            }
+
+        }
+
+
+        updateProgress(
+            95,
+            "Creating final PDF..."
+        );
+
+
+        const pdfBytes =
+            await finalPdf.save();
+
+
+        const fileName =
+            getFileName();
+
+
+        download(
+            pdfBytes,
+            fileName
+        );
+
+
+        updateProgress(
+            100,
+            "Completed"
+        );
+
+
+        showStatus(
+            `Successfully merged ${documents.length} document${documents.length>1?"s":""}.`,
+            "success"
+        );
+
+    }
+
+
+    catch(error){
+
+        console.error(error);
+
+        showStatus(
+            "Unable to merge the documents. Please check the files and try again.",
+            "error"
+        );
+
+    }
+
+
+    finally{
+
+        mergeBtn.disabled =
+            documents.length === 0;
+
+        clearBtn.disabled =
+            documents.length === 0;
+
+    }
+
+}
+
+
+/* =====================================================
+   ADD PDF
+===================================================== */
+
+async function addPdf(
+    target,
+    file
+){
+
+    const bytes =
+        await file.arrayBuffer();
+
+
+    const source =
+        await PDFDocument.load(
+            bytes
+        );
+
+
+    const pages =
+        await target.copyPages(
+            source,
+            source.getPageIndices()
+        );
+
+
+    pages.forEach(
+        page =>
+            target.addPage(page)
+    );
+
+}
+
+
+/* =====================================================
+   ADD JPG
+===================================================== */
+
+async function addJpg(
+    target,
+    file
+){
+
+    const bytes =
+        await file.arrayBuffer();
+
+
+    const image =
+        await target.embedJpg(
+            bytes
+        );
+
+
+    const A4_WIDTH =
+        595.28;
+
+    const A4_HEIGHT =
+        841.89;
+
+    const MARGIN =
+        20;
+
+
+    const availableWidth =
+        A4_WIDTH -
+        MARGIN*2;
+
+
+    const availableHeight =
+        A4_HEIGHT -
+        MARGIN*2;
+
+
+    const scale =
+        Math.min(
+            availableWidth /
+                image.width,
+
+            availableHeight /
+                image.height
+        );
+
+
+    const width =
+        image.width * scale;
+
+
+    const height =
+        image.height * scale;
+
+
+    const page =
+        target.addPage([
+            A4_WIDTH,
+            A4_HEIGHT
+        ]);
+
+
+    page.drawImage(
+        image,
+        {
+
+            x:
+                (A4_WIDTH-width)/2,
+
+            y:
+                (A4_HEIGHT-height)/2,
+
+            width:width,
+
+            height:height
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   ADD DOCX
+===================================================== */
+
+async function addDocx(
+    target,
+    file
+){
+
+    const buffer =
+        await file.arrayBuffer();
+
+
+    const result =
+        await mammoth.convertToHtml({
+            arrayBuffer:buffer
+        });
+
+
+    docxRenderer.innerHTML =
+        result.value;
+
+
+    await wait(200);
+
+
+    const canvas =
+        await html2canvas(
+            docxRenderer,
+            {
+
+                scale:1.5,
+
+                backgroundColor:
+                    "#ffffff",
+
+                useCORS:true,
+
+                logging:false
+
+            }
+        );
+
+
+    const A4_WIDTH =
+        595.28;
+
+    const A4_HEIGHT =
+        841.89;
+
+
+    const scale =
+        A4_WIDTH /
+        canvas.width;
+
+
+    const pixelsPerPage =
+        A4_HEIGHT /
+        scale;
+
+
+    let offset = 0;
+
+
+    while(
+        offset < canvas.height
+    ){
+
+        const sliceHeight =
+            Math.min(
+                pixelsPerPage,
+
+                canvas.height -
+                    offset
+            );
+
+
+        const slice =
+            document.createElement(
+                "canvas"
+            );
+
+
+        slice.width =
+            canvas.width;
+
+        slice.height =
+            sliceHeight;
+
+
+        const context =
+            slice.getContext("2d");
+
+
+        context.fillStyle =
+            "#ffffff";
+
+        context.fillRect(
+            0,
+            0,
+            slice.width,
+            slice.height
+        );
+
+
+        context.drawImage(
+            canvas,
+
+            0,
+            offset,
+            canvas.width,
+            sliceHeight,
+
+            0,
+            0,
+            canvas.width,
+            sliceHeight
+        );
+
+
+        const data =
+            slice.toDataURL(
+                "image/jpeg",
+                .92
+            );
+
+
+        const imageBytes =
+            dataUrlToBytes(data);
+
+
+        const image =
+            await target.embedJpg(
+                imageBytes
+            );
+
+
+        const page =
+            target.addPage([
+                A4_WIDTH,
+                A4_HEIGHT
+            ]);
+
+
+        const displayHeight =
+            sliceHeight * scale;
+
+
+        page.drawImage(
+            image,
+            {
+
+                x:0,
+
+                y:
+                    A4_HEIGHT -
+                    displayHeight,
+
+                width:
+                    A4_WIDTH,
+
+                height:
+                    displayHeight
+
+            }
+        );
+
+
+        offset +=
+            sliceHeight;
+
+    }
+
+
+    docxRenderer.innerHTML = "";
+
+}
+
+
+/* =====================================================
+   DATA URL
+===================================================== */
+
+function dataUrlToBytes(
+    dataUrl
+){
+
+    const base64 =
+        dataUrl.split(",")[1];
+
+
+    const binary =
+        atob(base64);
+
+
+    const bytes =
+        new Uint8Array(
+            binary.length
+        );
+
+
+    for(
+        let i=0;
+        i<binary.length;
+        i++
+    ){
+
+        bytes[i] =
+            binary.charCodeAt(i);
+
+    }
+
+
+    return bytes;
+
+}
+
+
+/* =====================================================
+   DOWNLOAD
+===================================================== */
+
+function download(
+    bytes,
+    fileName
+){
+
+    const blob =
+        new Blob(
+            [bytes],
+            {
+                type:
+                    "application/pdf"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const anchor =
+        document.createElement("a");
+
+
+    anchor.href =
+        url;
+
+    anchor.download =
+        fileName;
+
+
+    document.body.appendChild(
+        anchor
+    );
+
+
+    anchor.click();
+
+
+    anchor.remove();
+
+
+    setTimeout(
+        () =>
+            URL.revokeObjectURL(url),
+        1000
+    );
+
+}
+
+
+/* =====================================================
+   FILE NAME
+===================================================== */
+
+function getFileName(){
+
+    let name =
+        outputName.value.trim();
+
+
+    if(!name){
+
+        name =
+            "Merged-Document";
+
+    }
+
+
+    name =
+        name.replace(
+            /\.pdf$/i,
+            ""
+        );
+
+
+    name =
+        name.replace(
+            /[<>:"/\\|?*]+/g,
+            "_"
+        );
+
+
+    return name +
+        ".pdf";
+
+}
+
+
+/* =====================================================
+   PROGRESS
+===================================================== */
+
+function updateProgress(
+    percent,
+    message
+){
+
+    progressBar.style.width =
+        percent + "%";
+
+    progressPercent.textContent =
+        percent + "%";
+
+    progressText.textContent =
+        message;
+
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+function showStatus(
+    message,
+    type
+){
+
+    statusBox.textContent =
+        message;
+
+    statusBox.className =
+        "status " + type;
+
+}
+
+
+function hideStatus(){
+
+    statusBox.className =
+        "status";
+
+    statusBox.textContent =
+        "";
+
+}
+
+
+/* =====================================================
+   FORMAT BYTES
+===================================================== */
+
+function formatBytes(bytes){
+
+    if(bytes === 0)
+        return "0 Bytes";
+
+
+    const units = [
+        "Bytes",
+        "KB",
+        "MB",
+        "GB"
+    ];
+
+
+    const index =
+        Math.floor(
+            Math.log(bytes) /
+            Math.log(1024)
+        );
+
+
+    return (
+        parseFloat(
+            (
+                bytes /
+                Math.pow(
+                    1024,
+                    index
+                )
+            ).toFixed(2)
+        )
+        +
+        " "
+        +
+        units[index]
+    );
+
+}
+
+
+/* =====================================================
+   WAIT
+===================================================== */
+
+function wait(ms){
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                ms
+            )
+    );
+
+}
+
+
+/* =====================================================
+   PWA MANIFEST
+===================================================== */
+
+function createManifest(){
+
+    const manifest = {
+
+        name:
+            "Document Merger PWA",
+
+        short_name:
+            "Doc Merger",
+
+        description:
+            "Merge PDF, Word and JPG documents into one PDF.",
+
+        start_url:
+            "./",
+
+        scope:
+            "./",
+
+        display:
+            "standalone",
+
+        orientation:
+            "portrait",
+
+        background_color:
+            "#f4f7f8",
+
+        theme_color:
+            "#123b4a"
+
+    };
+
+
+    const blob =
+        new Blob(
+            [
+                JSON.stringify(
+                    manifest
+                )
+            ],
+            {
+                type:
+                    "application/manifest+json"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    document
+        .getElementById(
+            "manifestLink"
+        )
+        .href = url;
+
+}
+
+
+createManifest();
+
+
+/* =====================================================
+   PWA SERVICE WORKER
+===================================================== */
+
+function registerServiceWorker(){
+
+    if(
+        !("serviceWorker" in navigator)
+    ){
+
+        return;
+
+    }
+
+
+    const serviceWorkerCode = `
+
+const CACHE_NAME =
+    "document-merger-pwa-v1";
+
+
+const CORE_FILES = [
+
+    "./",
+
+    "./index.html"
+
+];
+
+
+self.addEventListener(
+    "install",
+    event => {
+
+        event.waitUntil(
+
+            caches.open(
+                CACHE_NAME
+            )
+            .then(
+                cache =>
+                    cache.addAll(
+                        CORE_FILES
+                    )
+            )
+
+        );
+
+        self.skipWaiting();
+
+    }
+);
+
+
+self.addEventListener(
+    "activate",
+    event => {
+
+        event.waitUntil(
+
+            caches.keys()
+                .then(
+                    names =>
+                        Promise.all(
+
+                            names
+                                .filter(
+                                    name =>
+                                        name !==
+                                        CACHE_NAME
+                                )
+                                .map(
+                                    name =>
+                                        caches.delete(
+                                            name
+                                        )
+                                )
+
+                        )
+                )
+
+        );
+
+        self.clients.claim();
+
+    }
+);
+
+
+self.addEventListener(
+    "fetch",
+    event => {
+
+        event.respondWith(
+
+            caches.match(
+                event.request
+            )
+            .then(
+                cached => {
+
+                    if(cached){
+
+                        return cached;
+
+                    }
+
+
+                    return fetch(
+                        event.request
+                    );
+
+                }
+            )
+
+        );
+
+    }
+);
+
+`;
+
+
+    const blob =
+        new Blob(
+            [
+                serviceWorkerCode
+            ],
+            {
+                type:
+                    "application/javascript"
+            }
+        );
+
+
+    const workerUrl =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    /*
+       Blob URLs cannot normally be used
+       as a Service Worker script on all
+       browsers.
+
+       The app therefore attempts registration
+       only when supported.
+    */
+
+
+    try{
+
+        navigator.serviceWorker
+            .register(
+                "./sw.js"
+            )
+            .then(
+                () =>
+                    console.log(
+                        "PWA Service Worker active."
+                    )
+            )
+            .catch(
+                error =>
+                    console.log(
+                        "Service Worker will require sw.js on GitHub Pages.",
+                        error
+                    )
+            );
+
+    }
+    catch(error){
+
+        console.log(error);
+
+    }
+
+}
+
+
+registerServiceWorker();
+
+
+/* =====================================================
+   INSTALL PROMPT
+===================================================== */
+
+window.addEventListener(
+    "beforeinstallprompt",
+    event => {
+
+        event.preventDefault();
+
+        deferredPrompt =
+            event;
+
+        installBtn.style.display =
+            "block";
+
+    }
+);
+
+
+installBtn.onclick =
+async function(){
+
+    if(!deferredPrompt){
+
+        return;
+
+    }
+
+
+    deferredPrompt.prompt();
+
+
+    await deferredPrompt.userChoice;
+
+
+    deferredPrompt =
+        null;
+
+
+    installBtn.style.display =
+        "none";
+
+};
+
+
+window.addEventListener(
+    "appinstalled",
+    () => {
+
+        installBtn.style.display =
+            "none";
+
+    }
+);
+
+
+/* =====================================================
+   INITIAL
+===================================================== */
+
+render();
+
+</script>
+
+</body>
+</html>
+```
